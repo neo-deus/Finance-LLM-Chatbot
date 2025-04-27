@@ -19,9 +19,9 @@ A modular financial chatbot that integrates stock analysis, portfolio management
 
 ![TCS Stock Plot](TCS_stock_plot.png)
 
-### Portfolio Composition
+### Custom Historical Chart (Any Duration)
 
-![Portfolio Composition](portfolio_composition.png)
+![Historical Chart](INFY_stock_plot.png)
 
 ## Installation
 
