@@ -338,21 +338,59 @@ class FinanceChatbot:
         ticker, full_name, _ = company_info
         
         # Determine time period
-        period = "1y"  # Default
+        yfinance_period = "1y"  # Default technical period for yfinance
+        display_period = "1 year"  # Human-readable period for display
         user_input_lower = user_input.lower()
         
-        if "1 month" in user_input_lower or "1m" in user_input_lower or "one month" in user_input_lower:
-            period = "1mo"
-        elif "3 months" in user_input_lower or "3m" in user_input_lower or "three months" in user_input_lower:
-            period = "3mo"
-        elif "6 months" in user_input_lower or "6m" in user_input_lower or "six months" in user_input_lower:
-            period = "6mo"
-        elif "5 years" in user_input_lower or "5y" in user_input_lower or "five years" in user_input_lower:
-            period = "5y"
+        # Extract numeric duration and unit from user input
+        duration_match = re.search(r'(\d+)\s*(day|days|week|weeks|month|months|year|years)', user_input_lower)
+        if duration_match:
+            duration = int(duration_match.group(1))
+            unit = duration_match.group(2)
+            
+            # Store the requested duration for display
+            if unit in ['day', 'days']:
+                display_period = f"{duration} {'day' if duration == 1 else 'days'}"
+                if duration <= 60:
+                    yfinance_period = f"{duration}d"
+                else:
+                    # For longer periods, convert to appropriate format for yfinance
+                    yfinance_period = f"{duration}d"  # Now using start/end dates, can keep this format
+            elif unit in ['week', 'weeks']:
+                display_period = f"{duration} {'week' if duration == 1 else 'weeks'}"
+                yfinance_period = f"{duration * 7}d"  # Convert to days
+            elif unit in ['month', 'months']:
+                display_period = f"{duration} {'month' if duration == 1 else 'months'}"
+                yfinance_period = f"{duration}mo"  # Now using start/end dates, can keep this format
+            elif unit in ['year', 'years']:
+                display_period = f"{duration} {'year' if duration == 1 else 'years'}"
+                yfinance_period = f"{duration}y"
+        else:
+            # Handle specific period phrases
+            if "1 month" in user_input_lower or "1m" in user_input_lower or "one month" in user_input_lower:
+                display_period = "1 month"
+                yfinance_period = "1mo"
+            elif "3 months" in user_input_lower or "3m" in user_input_lower or "three months" in user_input_lower:
+                display_period = "3 months"
+                yfinance_period = "3mo"
+            elif "6 months" in user_input_lower or "6m" in user_input_lower or "six months" in user_input_lower:
+                display_period = "6 months"
+                yfinance_period = "6mo"
+            elif "5 years" in user_input_lower or "5y" in user_input_lower or "five years" in user_input_lower:
+                display_period = "5 years"
+                yfinance_period = "5y"
+            elif "last year" in user_input_lower or "past year" in user_input_lower:
+                display_period = "1 year"
+                yfinance_period = "1y"
+            elif "2 years" in user_input_lower or "two years" in user_input_lower:
+                display_period = "2 years"
+                yfinance_period = "2y"
+            
+        print(f"Using period: {yfinance_period} for performance analysis")
             
         try:
             # Get stock data
-            data = self.stock_data_service.get_stock_data(ticker, period=period)
+            data = self.stock_data_service.get_stock_data(ticker, period=yfinance_period)
             
             if data is None or data.empty:
                 return f"I couldn't retrieve performance data for {full_name} ({ticker})."
@@ -374,7 +412,7 @@ class FinanceChatbot:
             volatility = returns.std() * 100
             
             # Format the response
-            response = f"Performance Analysis for {full_name} ({ticker}) over {period}:\n\n"
+            response = f"Performance Analysis for {full_name} ({ticker}) over the past {display_period}:\n\n"
             response += f"Starting Price: ${start_price:.2f} (on {data.index[0].strftime('%Y-%m-%d')})\n"
             response += f"Current Price: ${current_price:.2f} (on {data.index[-1].strftime('%Y-%m-%d')})\n"
             response += f"Absolute Change: ${absolute_change:.2f}\n"
@@ -398,7 +436,7 @@ class FinanceChatbot:
                 response += "The stock has shown relatively low volatility during this period.\n"
             
             # Generate and save the plot
-            plot_path = self.stock_analyzer.plot_stock(ticker, period=period)
+            plot_path = self.stock_analyzer.plot_stock(ticker, period=yfinance_period)
             if plot_path:
                 response += f"\nA chart has been saved to {plot_path}."
                 

@@ -72,6 +72,7 @@ class StockAnalyzer:
         Returns:
             str: Path to the saved plot
         """
+        print(f"Plotting stock {ticker} for period: {period}")
         data = self.stock_data_service.get_stock_data(ticker, period)
         if data is None or data.empty:
             return None
