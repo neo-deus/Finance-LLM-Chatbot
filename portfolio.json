@@ -1,0 +1,36 @@
+{
+    "stocks": {
+        "TCS": {
+            "shares": 5.0,
+            "cost_basis": 2000.0
+        },
+        "TCS.NS": {
+            "shares": 1.0,
+            "cost_basis": 1800.0
+        }
+    },
+    "cash": 200.0,
+    "transactions": [
+        {
+            "type": "deposit",
+            "amount": 12000.0,
+            "date": "2025-04-27"
+        },
+        {
+            "type": "buy",
+            "ticker": "TCS",
+            "shares": 5.0,
+            "price": 2000.0,
+            "value": 10000.0,
+            "date": "2025-04-27"
+        },
+        {
+            "type": "buy",
+            "ticker": "TCS.NS",
+            "shares": 1.0,
+            "price": 1800.0,
+            "value": 1800.0,
+            "date": "2025-04-27"
+        }
+    ]
+}
