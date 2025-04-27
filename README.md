@@ -28,8 +28,7 @@ A modular financial chatbot that integrates stock analysis, portfolio management
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/yourusername/finance-llm-chatbot.git
-cd finance-llm-chatbot
+git clone https://github.com/neo-deus/Finance-LLM-Chatbot.git
 ```
 
 2. Install the required packages:
