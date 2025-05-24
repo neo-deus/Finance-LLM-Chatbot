@@ -1,4 +1,4 @@
-import requests
+﻿import requests
 import time
 import os
 from modules.config import Config
@@ -44,22 +44,18 @@ class LLMClient:
         if self.model_type == "t5":
             # T5 models work best with simple, direct prompts
             return f"Answer this finance question: {user_input}"
-            
         elif self.model_type == "gpt":
             # GPT-style models work well with chat-like prompts
-            return f"You are a helpful financial assistant that specializes in stock markets and portfolio management.\nUser: {user_input}\nAssistant:"
-            
+            return f"You are a helpful financial assistant that specializes in stock markets and investment analysis.\nUser: {user_input}\nAssistant:"
         elif self.model_type in ["llama", "mistral"]:
             # Llama and Mistral use a specific chat format
             return f"<s>[INST] You are a financial advisor. {user_input} [/INST]"
-            
         elif self.model_type == "bert":
             # BERT models are not ideal for generation but can answer simple queries
             return f"Finance question: {user_input}"
-            
         else:
             # Generic format for other models
-            return f"You are a helpful financial assistant that specializes in stock markets and portfolio management.\n\nUser: {user_input}\n\nAssistant:"
+            return f"You are a helpful financial assistant that specializes in stock markets and investment analysis.\n\nUser: {user_input}\n\nAssistant:"
     
     def get_response(self, user_input):
         """

@@ -1,13 +1,12 @@
 # Finance LLM Chatbot
 
-A modular financial chatbot that integrates stock analysis, portfolio management, and LLM capabilities to provide personalized financial information and advice.
+A modular financial chatbot that integrates stock analysis and LLM capabilities to provide financial information and advice.
 
 ![TCS vs RELIANCE Comparison](TCS_vs_RELIANCE_comparison.png)
 
 ## Features
 
 - **Stock Analysis** - Get detailed information about stocks including price history, technical indicators, and performance metrics
-- **Portfolio Management** - Track your investments, analyze performance, and view portfolio composition
 - **Investment Advice** - Receive technical analysis-based investment signals and recommendations
 - **Stock Comparison** - Compare performance metrics between different stocks
 - **Natural Language Interface** - Interact with the chatbot using natural language queries
@@ -63,7 +62,6 @@ python main.py
 
 - `--api_key` or `--api-key`: Your Hugging Face API key
 - `--model`: Model name to use (default: "google/flan-t5-small")
-- `--portfolio`: Path to portfolio JSON file (default: "portfolio.json")
 
 ## Example Commands
 
@@ -81,14 +79,6 @@ Here are some example queries you can ask the chatbot:
 - "What is the RSI for Google?"
 - "Should I buy Netflix stock?"
 
-### Portfolio Management
-
-- "Add 10 shares of AAPL at $150 per share"
-- "Show my portfolio summary"
-- "What is my portfolio worth?"
-- "Show my portfolio composition"
-- "How has my portfolio performed?"
-
 ### Stock Comparison
 
 - "Compare Apple and Microsoft"
@@ -102,7 +92,6 @@ The project follows a modular architecture for improved maintainability:
 - `modules/stock_data.py`: Stock data retrieval service
 - `modules/company_mapper.py`: Company name to ticker symbol mapping
 - `modules/visualization.py`: Plotting and visualization utilities
-- `modules/portfolio.py`: Portfolio management functionality
 - `modules/stock_analysis.py`: Stock analysis and investment advice
 - `modules/llm_client.py`: LLM integration with Hugging Face API
 - `modules/finance_chatbot.py`: Core chatbot integrating all components

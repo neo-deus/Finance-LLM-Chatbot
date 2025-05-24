@@ -12,8 +12,6 @@ def main():
                       help="Hugging Face model to use (default: google/flan-t5-small)")
     parser.add_argument("--api-key", "--api_key", dest="api_key", default=None,
                       help="Hugging Face API key (default: uses HF_API_KEY environment variable)")
-    parser.add_argument("--portfolio", dest="portfolio_file", default="portfolio.json",
-                      help="Portfolio file path (default: portfolio.json)")
     
     args = parser.parse_args()
     
@@ -24,7 +22,7 @@ def main():
     print("\n" + "=" * 60)
     print("Welcome to the Finance LLM Chatbot!")
     print("=" * 60)
-    print("This chatbot can help you with stock analysis, portfolio management,")
+    print("This chatbot can help you with stock analysis")
     print("and general finance questions using the power of LLMs.")
     print("\nType 'exit' or 'quit' to end the chat session.")
     print("=" * 60 + "\n")
@@ -32,8 +30,7 @@ def main():
     # Initialize the chatbot
     chatbot = FinanceChatbot(
         api_key=api_key,
-        model_name=args.model_name,
-        portfolio_file=args.portfolio_file
+        model_name=args.model_name
     )
     
     # Main chat loop

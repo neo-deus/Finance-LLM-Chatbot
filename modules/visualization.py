@@ -46,78 +46,8 @@ class Visualizer:
         plt.close()
         
         return plot_path
-    
-    @staticmethod
-    def plot_portfolio_composition(allocation):
-        """
-        Create a pie chart of portfolio composition
-        
-        Args:
-            allocation (dict): Portfolio allocation data
-            
-        Returns:
-            str: Path to saved plot file
-        """
-        if not allocation:
-            return None
-            
-        # Extract labels and sizes
-        labels = list(allocation.keys())
-        values = [item["value"] for item in allocation.values()]
-        percentages = [item["percentage"] for item in allocation.values()]
-        
-        # Create custom labels with percentages
-        custom_labels = [f"{label} (${value:.2f}, {pct:.1f}%)" 
-                        for label, value, pct in zip(labels, values, percentages)]
-        
-        # Create pie chart
-        plt.figure(figsize=(10, 8))
-        plt.pie(values, labels=custom_labels, autopct=lambda pct: f"{pct:.1f}%", 
-                startangle=90, shadow=True)
-        plt.axis('equal')  # Equal aspect ratio ensures pie is drawn as a circle
-        plt.title("Portfolio Composition")
-        
-        # Save plot
-        plot_path = "portfolio_composition.png"
-        plt.savefig(plot_path)
-        plt.close()
-        
-        return plot_path
-    
-    @staticmethod
-    def plot_portfolio_performance(dates, values, period="1y"):
-        """
-        Create a plot of portfolio performance
-        
-        Args:
-            dates (list): List of date strings
-            values (list): List of portfolio values
-            period (str): Time period for the plot
-            
-        Returns:
-            str: Path to saved plot file
-        """
-        if len(dates) == 0 or len(values) == 0:
-            return None
-        
-        # Convert dates to datetime objects if they are strings
-        if isinstance(dates[0], str):
-            dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
-        
-        # Create plot
-        plt.figure(figsize=(12, 6))
-        plt.plot(dates, values)
-        plt.title(f"Portfolio Performance ({period})")
-        plt.xlabel("Date")
-        plt.ylabel("Value ($)")
-        plt.grid(True, alpha=0.3)
-        
-        # Save plot
-        plot_path = "portfolio_performance.png"
-        plt.savefig(plot_path)
-        plt.close()
-        
-        return plot_path
+      # Portfolio composition visualization function removed as part of the removal of portfolio management functionality
+      # Portfolio performance visualization function removed as part of the removal of portfolio management functionality
     
     @staticmethod
     def plot_stock_comparison(data1, data2, ticker1, ticker2, period="1y"):

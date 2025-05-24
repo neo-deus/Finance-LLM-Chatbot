@@ -2,13 +2,9 @@ import os
 
 class Config:
     """Configuration settings for the Finance Chatbot application"""
-    
-    # API settings
+      # API settings
     API_KEY = os.environ.get("HF_API_KEY")
     DEFAULT_MODEL = "google/flan-t5-small"
-    
-    # File paths
-    PORTFOLIO_FILE = "portfolio.json"
     
     # Stock data settings
     DEFAULT_PERIOD = "1y"

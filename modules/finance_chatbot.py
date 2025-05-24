@@ -4,32 +4,30 @@ import argparse
 from modules.config import Config
 from modules.stock_data import StockDataService
 from modules.company_mapper import CompanyMapper
-from modules.portfolio import Portfolio
 from modules.stock_analysis import StockAnalyzer
 from modules.visualization import Visualizer
 from modules.llm_client import LLMClient
 
 class FinanceChatbot:
     """
-    Finance chatbot that integrates stock analysis, portfolio management, and LLM capabilities
+    Finance chatbot that integrates stock analysis and LLM capabilities
     using a modular architecture for improved maintainability.
     """
     
-    def __init__(self, api_key=None, model_name=Config.DEFAULT_MODEL, portfolio_file=Config.PORTFOLIO_FILE):
+    def __init__(self, api_key=None, model_name=Config.DEFAULT_MODEL, portfolio_file=None):
         """
         Initialize the Finance Chatbot
         
         Args:
             api_key (str): Hugging Face API key. If None, will look for HF_API_KEY environment variable
             model_name (str): Name of the model to use on Hugging Face
-            portfolio_file (str): Path to portfolio JSON file
+            portfolio_file (str): Not used (kept for backward compatibility)
         """
         print("Initializing Finance Chatbot...")
         
         # Initialize components
         self.stock_data_service = StockDataService()
         self.company_mapper = CompanyMapper()
-        self.portfolio = Portfolio(portfolio_file)
         self.stock_analyzer = StockAnalyzer()
         self.llm_client = LLMClient(api_key, model_name)
         
@@ -50,11 +48,6 @@ class FinanceChatbot:
         """
         print(f"Processing: '{user_input}'")
         user_input_lower = user_input.lower()
-        
-        # First check if this is a portfolio command
-        portfolio_response = self.handle_portfolio_command(user_input)
-        if portfolio_response:
-            return portfolio_response
         
         # Check if this is a stock buying advice request
         if any(phrase in user_input_lower for phrase in ["should i buy", "worth buying", "good investment", "invest in"]):
@@ -124,92 +117,10 @@ class FinanceChatbot:
         
         # If not a specific command, use the LLM for general financial advice
         if not self.llm_client.api_key:
-            return "Please set your Hugging Face API key to use the language model features. You can still use stock analysis and portfolio management features."
+            return "Please set your Hugging Face API key to use the language model features. You can still use stock analysis features."
         
         # Query the LLM
         return self.llm_client.get_response(user_input)
-    
-    def handle_portfolio_command(self, user_input):
-        """
-        Handle portfolio-related commands
-        
-        Args:
-            user_input (str): User's input
-            
-        Returns:
-            str or None: Response to portfolio command or None if not a portfolio command
-        """
-        user_input_lower = user_input.lower()
-        
-        # Check for portfolio commands
-        if "add stock" in user_input_lower or "add to portfolio" in user_input_lower:
-            # Extract ticker, shares, and price
-            ticker = self.company_mapper.extract_ticker_symbol(user_input)
-            shares_match = re.search(r'(\d+(?:\.\d+)?)\s*shares', user_input_lower)
-            price_match = re.search(r'\$?(\d+(?:\.\d+)?)\s*(?:per share|each|price)', user_input_lower)
-            date_match = re.search(r'(?:on|at|date)\s*(\d{4}-\d{2}-\d{2})', user_input_lower)
-            
-            if ticker and shares_match and price_match:
-                shares = float(shares_match.group(1))
-                price = float(price_match.group(1))
-                date = date_match.group(1) if date_match else None
-                
-                success = self.portfolio.add_stock(ticker, shares, price, date)
-                if success:
-                    return f"Added {shares} shares of {ticker} at ${price} per share (dated {date or 'today'}) to your portfolio."
-                else:
-                    return "Sorry, I couldn't add that stock to your portfolio. Please try again."
-            else:
-                return "To add a stock, please specify the ticker symbol, number of shares, and purchase price. For example: 'Add 10 shares of AAPL at $150 per share'"
-        
-        elif "remove stock" in user_input_lower or "delete from portfolio" in user_input_lower:
-            ticker = self.company_mapper.extract_ticker_symbol(user_input)
-            if ticker:
-                success = self.portfolio.remove_stock(ticker)
-                if success:
-                    return f"Removed {ticker} from your portfolio."
-                else:
-                    return f"Sorry, I couldn't find {ticker} in your portfolio."
-            else:
-                return "To remove a stock, please specify the ticker symbol. For example: 'Remove AAPL from my portfolio'"
-        
-        elif "portfolio value" in user_input_lower or "portfolio worth" in user_input_lower:
-            value = self.portfolio.calculate_portfolio_value()
-            return f"Your portfolio is worth ${value['total_value']:.2f} with a total profit/loss of ${value['total_profit_loss']:.2f} ({value['total_profit_loss_pct']:.2f}%)."
-        
-        elif "portfolio summary" in user_input_lower or "summarize portfolio" in user_input_lower:
-            summary = self.portfolio.get_portfolio_summary()
-            return summary
-        
-        elif "portfolio composition" in user_input_lower or "portfolio breakdown" in user_input_lower:
-            plot_path = self.portfolio.plot_portfolio_composition()
-            return f"I've created a pie chart showing your portfolio composition. You can view it in the file: {plot_path}"
-        
-        elif "portfolio performance" in user_input_lower:
-            period = "1y"  # Default to 1 year
-            if "1 month" in user_input_lower or "1m" in user_input_lower:
-                period = "1mo"
-            elif "3 months" in user_input_lower or "3m" in user_input_lower:
-                period = "3mo"
-            elif "5 years" in user_input_lower or "5y" in user_input_lower:
-                period = "5y"
-                
-            plot_path = self.portfolio.plot_portfolio_performance(period=period)
-            return f"I've created a chart showing your portfolio performance over {period}. You can view it in the file: {plot_path}"
-            
-        elif "add cash" in user_input_lower or "deposit" in user_input_lower:
-            amount_match = re.search(r'\$?(\d+(?:\.\d+)?)', user_input_lower)
-            if amount_match:
-                amount = float(amount_match.group(1))
-                success = self.portfolio.add_cash(amount)
-                if success:
-                    return f"Added ${amount:.2f} to your portfolio."
-                else:
-                    return "Sorry, I couldn't add cash to your portfolio. Please try again."
-            else:
-                return "To add cash, please specify the amount. For example: 'Add $1000 cash to my portfolio'"
-        
-        return None  # Not a portfolio command
     
     def handle_stock_buying_advice(self, user_input):
         """Handle stock buying advice request"""
