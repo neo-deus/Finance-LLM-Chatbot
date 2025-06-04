@@ -93,7 +93,8 @@ class StockDataService:
         # Indian tickers usually end with .NS (NSE) or .BO (BSE)
         if ticker.endswith(('.NS', '.BO')):
             return True
-              # Check if it's in our list of known Indian stocks
+            
+        # Check if it's in our list of known Indian stocks
         base_ticker = ticker.split('.')[0]
         if base_ticker in Config.INDIAN_STOCKS:
             return True
@@ -108,22 +109,15 @@ class StockDataService:
         if start_date and end_date:
             print(f"Using date range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
         
-        # Start with Yahoo Finance direct API since it's consistently working
-        print(f"Trying Yahoo Finance direct API first for {ticker}...")
-        real_data = self._try_yahoo_finance_direct(ticker, start_date, end_date, period)
-        if real_data is not None:
-            return real_data
-        
-        # Fallback to yfinance if direct API fails
+        # First try standard yfinance with .NS or .BO suffix if not already added
         if not ticker.endswith(('.NS', '.BO')):
-            print(f"Yahoo Finance direct API failed for {ticker}, trying yfinance as fallback...")
             # Try NSE first, then BSE with retry logic
             for suffix in ['.NS', '.BO']:
-                for attempt in range(2):  # Reduced attempts since direct API is primary
+                for attempt in range(3):  # Try 3 times
                     try:
                         # Add random delay to avoid rate limiting
                         if attempt > 0:
-                            delay = random.uniform(1, 3) * (attempt + 1)
+                            delay = random.uniform(2, 5) * (attempt + 1)
                             print(f"Retrying {ticker}{suffix} after {delay:.1f}s delay (attempt {attempt + 1})")
                             time.sleep(delay)
                         
@@ -145,14 +139,23 @@ class StockDataService:
                         print(f"Error with {ticker}{suffix} (attempt {attempt + 1}): {e}")
                         if "rate limit" in str(e).lower() or "too many requests" in str(e).lower():
                             continue  # Try next attempt
-                        if attempt == 1:  # Last attempt (reduced from 2)
+                        if attempt == 2:  # Last attempt
                             break
         
-        # Try NSE India API as additional fallback
+        # If yfinance failed, try alternative APIs
+        print(f"yfinance failed for {ticker}, trying alternative sources...")
+        
+        # Method 1: Try Yahoo Finance direct API
+        real_data = self._try_yahoo_finance_direct(ticker, start_date, end_date, period)
+        if real_data is not None:
+            return real_data
+        
+        # Method 2: Try NSE India API with better implementation
         real_data = self._try_nse_api(ticker, start_date, end_date, period)
         if real_data is not None:
             return real_data
-          # Try other free APIs
+        
+        # Method 3: Try other free APIs
         real_data = self._try_alternative_apis(ticker, start_date, end_date, period)
         if real_data is not None:
             return real_data
@@ -170,22 +173,11 @@ class StockDataService:
         try:
             base_ticker = ticker.split('.')[0]
             
-            # Use range parameter for better results, similar to the working example
-            # Convert period to Yahoo Finance range format
-            if period.endswith('d'):
-                range_param = period
-            elif period.endswith('mo'):
-                range_param = period
-            elif period.endswith('y'):
-                range_param = period
-            else:
-                range_param = "1y"  # Default to 1 year
-            
-            # Different URL patterns to try with range and interval parameters
+            # Different URL patterns to try
             url_patterns = [
-                f"https://query1.finance.yahoo.com/v8/finance/chart/{base_ticker}.NS?range={range_param}&interval=1d",
-                f"https://query1.finance.yahoo.com/v8/finance/chart/{base_ticker}.BO?range={range_param}&interval=1d",
-                f"https://query2.finance.yahoo.com/v8/finance/chart/{base_ticker}.NS?range={range_param}&interval=1d"
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{base_ticker}.NS",
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{base_ticker}.BO",
+                f"https://query2.finance.yahoo.com/v8/finance/chart/{base_ticker}.NS"
             ]
             
             headers = {
@@ -218,13 +210,15 @@ class StockDataService:
                                     'Close': quotes.get('close', []),
                                     'Volume': quotes.get('volume', [])
                                 })
-                                  # Convert timestamps to dates
+                                
+                                # Convert timestamps to dates
                                 df.index = pd.to_datetime([datetime.fromtimestamp(ts) for ts in timestamps])
                                 
+                                # Filter by date range if specified
+                                if start_date and end_date:
+                                    df = df[(df.index >= start_date) & (df.index <= end_date)]
+                                
                                 if not df.empty:
-                                    # Remove rows with NaN values
-                                    df = df.dropna()
-                                    
                                     # Calculate moving averages
                                     df['MA50'] = df['Close'].rolling(window=50).mean()
                                     df['MA200'] = df['Close'].rolling(window=200).mean()
@@ -318,7 +312,8 @@ class StockDataService:
         return None
     
     def _try_alternative_apis(self, ticker, start_date, end_date, period):
-        """Try other free financial APIs"""        # This is where you could add other free APIs like:
+        """Try other free financial APIs"""
+        # This is where you could add other free APIs like:
         # - Alpha Vantage (free tier)
         # - Financial Modeling Prep (free tier)
         # - IEX Cloud (free tier)
@@ -337,10 +332,7 @@ class StockDataService:
         """
         data = self.get_stock_data(ticker, period="5d")
         if data is not None and not data.empty:
-            # Get the last valid (non-NaN) close price
-            valid_close_prices = data['Close'].dropna()
-            if not valid_close_prices.empty:
-                return valid_close_prices.iloc[-1]
+            return data['Close'].iloc[-1]
         return None
         
     def clear_cache(self):

@@ -1,10 +1,9 @@
 import os
 
 class Config:
-    """Configuration settings for the Finance Chatbot application"""
-      # API settings
+    """Configuration settings for the Finance Chatbot application"""    # API settings
     API_KEY = os.environ.get("HF_API_KEY")
-    DEFAULT_MODEL = "google/flan-t5-small"
+    DEFAULT_MODEL = "microsoft/DialoGPT-medium"  # Better model for conversation
     
     # Stock data settings
     DEFAULT_PERIOD = "1y"

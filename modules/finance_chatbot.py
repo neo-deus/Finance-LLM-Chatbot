@@ -11,8 +11,7 @@ from modules.llm_client import LLMClient
 class FinanceChatbot:
     """
     Finance chatbot that integrates stock analysis and LLM capabilities
-    using a modular architecture for improved maintainability.
-    """
+    using a modular architecture for improved maintainability.    """
     
     def __init__(self, api_key=None, model_name=Config.DEFAULT_MODEL, portfolio_file=None):
         """
@@ -35,6 +34,18 @@ class FinanceChatbot:
         print("✓ No large models stored locally")
         print("✓ Processing happens on Hugging Face servers")
         print("✓ Minimal storage requirements")
+    
+    def _get_currency_symbol(self, ticker):
+        """
+        Get the appropriate currency symbol for a stock ticker
+        
+        Args:
+            ticker (str): Stock ticker symbol
+            
+        Returns:
+            str: Currency symbol (₹ for Indian stocks, $ for others)
+        """
+        return "₹" if self.stock_data_service._is_indian_stock(ticker) else "$"
     
     def get_response(self, user_input):
         """
@@ -95,29 +106,30 @@ class FinanceChatbot:
                 price_info = self.handle_price_query(user_input)
                 if price_info:
                     return price_info
-                break
-        
-        # Before using the LLM, check if we can extract a stock and provide basic info
-        company_info = self.company_mapper.extract_company_name(user_input)
-        if company_info:
-            ticker, full_name, _ = company_info
-            try:
-                # Get basic stock info
-                current_price = self.stock_data_service.get_current_price(ticker)
-                if current_price is not None:
-                    # Get stock data to calculate change
-                    data = self.stock_data_service.get_stock_data(ticker, "5d")
-                    if data is not None and not data.empty and len(data) >= 2:
-                        change = ((data['Close'].iloc[-1] - data['Close'].iloc[-2]) / data['Close'].iloc[-2]) * 100
-                        
-                        return f"{full_name} ({ticker}) is currently trading at ${current_price:.2f}, " + \
-                               f"which is {change:.2f}% {'up' if change >= 0 else 'down'} from the previous close."
-            except:
-                pass  # If this fails, continue to LLM
-        
-        # If not a specific command, use the LLM for general financial advice
+                break        # Before using the LLM, check if we can extract a stock and provide basic info
+        # Only do this if the query seems stock-related
+        stock_related_keywords = ['stock', 'share', 'price', 'ticker', 'company', 'trading', 'market cap', 'dividend']
+        if any(keyword in user_input_lower for keyword in stock_related_keywords):
+            company_info = self.company_mapper.extract_company_name(user_input)
+            if company_info:
+                ticker, full_name, _ = company_info
+                try:
+                    # Get basic stock info
+                    current_price = self.stock_data_service.get_current_price(ticker)
+                    if current_price is not None:
+                        # Get stock data to calculate change
+                        data = self.stock_data_service.get_stock_data(ticker, "5d")
+                        if data is not None and not data.empty and len(data) >= 2:
+                            change = ((data['Close'].iloc[-1] - data['Close'].iloc[-2]) / data['Close'].iloc[-2]) * 100
+                            currency_symbol = self._get_currency_symbol(ticker)
+                            
+                            return f"{full_name} ({ticker}) is currently trading at {currency_symbol}{current_price:.2f}, " + \
+                                   f"which is {change:.2f}% {'up' if change >= 0 else 'down'} from the previous close."
+                except:
+                    pass  # If this fails, continue to LLM        # If not a specific command, use the LLM for general financial advice
         if not self.llm_client.api_key:
-            return "Please set your Hugging Face API key to use the language model features. You can still use stock analysis features."
+            # Use built-in fallback responses instead of just showing error message
+            return self.llm_client.get_fallback_response(user_input)
         
         # Query the LLM
         return self.llm_client.get_response(user_input)
@@ -136,12 +148,12 @@ class FinanceChatbot:
         try:
             # Get stock data and analysis
             analysis = self.stock_analyzer.get_investment_advice(ticker)
-            
             if "error" in analysis:
                 return analysis["error"]
             
+            currency_symbol = self._get_currency_symbol(ticker)
             response = f"Investment Analysis for {ticker} ({company_name}):\n\n"
-            response += f"Current price: ${analysis['current_price']:.2f}\n\n"
+            response += f"Current price: {currency_symbol}{analysis['current_price']:.2f}\n\n"
             
             # Add short-term signals
             response += "Short-term indicators:\n"
@@ -161,12 +173,11 @@ class FinanceChatbot:
             
             # Add disclaimer
             response += "Reminder: " + analysis["disclaimer"]
-            
-            # Generate and save the plot
+              # Generate and save the plot
             self.stock_analyzer.plot_stock(ticker)
             
             return response
-                    
+            
         except Exception as e:
             print(f"Error generating buying advice: {e}")
             return f"I encountered an error analyzing {ticker} ({company_name}). Please check if it's a valid ticker symbol."
@@ -180,8 +191,9 @@ class FinanceChatbot:
         try:
             analysis = self.stock_analyzer.analyze_stock(ticker)
             if "error" not in analysis:
+                currency_symbol = self._get_currency_symbol(ticker)
                 response = f"Analysis for {ticker}:\n"
-                response += f"Current price: ${analysis['current_price']}\n"
+                response += f"Current price: {currency_symbol}{analysis['current_price']}\n"
                 response += f"Change: {analysis['change_percent']}%\n"
                 response += f"Average volume: {analysis['volume']}\n"
                 response += f"RSI (14-day): {analysis['rsi']}\n"
@@ -206,15 +218,15 @@ class FinanceChatbot:
         try:
             # Get technical analysis
             analysis = self.stock_analyzer.get_technical_analysis(ticker)
-            
             if "error" in analysis:
                 return analysis["error"]
             
             # Format the response
+            currency_symbol = self._get_currency_symbol(ticker)
             response = f"Technical Analysis for {full_name} ({ticker}):\n\n"
-            response += f"Current Price: ${analysis['current_price']:.2f}\n"
-            response += f"50-day Moving Average: ${analysis['ma50']:.2f}\n"
-            response += f"200-day Moving Average: ${analysis['ma200']:.2f}\n"
+            response += f"Current Price: {currency_symbol}{analysis['current_price']:.2f}\n"
+            response += f"50-day Moving Average: {currency_symbol}{analysis['ma50']:.2f}\n"
+            response += f"200-day Moving Average: {currency_symbol}{analysis['ma200']:.2f}\n"
             response += f"RSI (14-day): {analysis['rsi']:.2f}\n\n"
             
             response += f"Current Trend: {analysis['ma_trend']} (50-day MA is {'above' if analysis['ma50'] > analysis['ma200'] else 'below'} 200-day MA)\n"
@@ -251,9 +263,7 @@ class FinanceChatbot:
         # Determine time period
         yfinance_period = "1y"  # Default technical period for yfinance
         display_period = "1 year"  # Human-readable period for display
-        user_input_lower = user_input.lower()
-        
-        # Extract numeric duration and unit from user input
+        user_input_lower = user_input.lower()        # Extract numeric duration and unit from user input
         duration_match = re.search(r'(\d+)\s*(day|days|week|weeks|month|months|year|years)', user_input_lower)
         if duration_match:
             duration = int(duration_match.group(1))
@@ -266,8 +276,7 @@ class FinanceChatbot:
                     yfinance_period = f"{duration}d"
                 else:
                     # For longer periods, convert to appropriate format for yfinance
-                    yfinance_period = f"{duration}d"  # Now using start/end dates, can keep this format
-            elif unit in ['week', 'weeks']:
+                    yfinance_period = f"{duration}d"  # Now using start/end dates, can keep this format            elif unit in ['week', 'weeks']:
                 display_period = f"{duration} {'week' if duration == 1 else 'weeks'}"
                 yfinance_period = f"{duration * 7}d"  # Convert to days
             elif unit in ['month', 'months']:
@@ -298,7 +307,7 @@ class FinanceChatbot:
                 yfinance_period = "2y"
             
         print(f"Using period: {yfinance_period} for performance analysis")
-            
+        
         try:
             # Get stock data
             data = self.stock_data_service.get_stock_data(ticker, period=yfinance_period)
@@ -317,20 +326,20 @@ class FinanceChatbot:
             low_price = data['Close'].min()
             high_date = data['Close'].idxmax().strftime('%Y-%m-%d')
             low_date = data['Close'].idxmin().strftime('%Y-%m-%d')
-            
-            # Calculate volatility
+              # Calculate volatility
             returns = data['Close'].pct_change().dropna()
             volatility = returns.std() * 100
             
             # Format the response
+            currency_symbol = self._get_currency_symbol(ticker)
             response = f"Performance Analysis for {full_name} ({ticker}) over the past {display_period}:\n\n"
-            response += f"Starting Price: ${start_price:.2f} (on {data.index[0].strftime('%Y-%m-%d')})\n"
-            response += f"Current Price: ${current_price:.2f} (on {data.index[-1].strftime('%Y-%m-%d')})\n"
-            response += f"Absolute Change: ${absolute_change:.2f}\n"
+            response += f"Starting Price: {currency_symbol}{start_price:.2f} (on {data.index[0].strftime('%Y-%m-%d')})\n"
+            response += f"Current Price: {currency_symbol}{current_price:.2f} (on {data.index[-1].strftime('%Y-%m-%d')})\n"
+            response += f"Absolute Change: {currency_symbol}{absolute_change:.2f}\n"
             response += f"Percentage Change: {percentage_change:.2f}%\n\n"
             
-            response += f"Highest Price: ${high_price:.2f} (on {high_date})\n"
-            response += f"Lowest Price: ${low_price:.2f} (on {low_date})\n"
+            response += f"Highest Price: {currency_symbol}{high_price:.2f} (on {high_date})\n"
+            response += f"Lowest Price: {currency_symbol}{low_price:.2f} (on {low_date})\n"
             response += f"Volatility: {volatility:.2f}%\n\n"
             
             # Add interpretation
@@ -386,13 +395,15 @@ class FinanceChatbot:
             
             if "error" in comparison:
                 return comparison["error"]
-                
+            
             # Format response
             response = f"Comparison of {full_name1} ({ticker1}) vs {full_name2} ({ticker2}):\n\n"
             
             # Current price information
-            response += f"{ticker1} Current Price: ${comparison['current_price1']:.2f}\n"
-            response += f"{ticker2} Current Price: ${comparison['current_price2']:.2f}\n\n"
+            currency_symbol1 = self._get_currency_symbol(ticker1)
+            currency_symbol2 = self._get_currency_symbol(ticker2)
+            response += f"{ticker1} Current Price: {currency_symbol1}{comparison['current_price1']:.2f}\n"
+            response += f"{ticker2} Current Price: {currency_symbol2}{comparison['current_price2']:.2f}\n\n"
             
             # Performance comparison
             response += f"Performance (1 year):\n"
@@ -439,7 +450,8 @@ class FinanceChatbot:
         try:
             current_price = self.stock_data_service.get_current_price(ticker)
             if current_price is not None:
-                return f"The current price of {full_name} ({ticker}) is ${current_price:.2f}."
+                currency_symbol = self._get_currency_symbol(ticker)
+                return f"The current price of {full_name} ({ticker}) is {currency_symbol}{current_price:.2f}."
             else:
                 return f"I couldn't retrieve the current price data for {full_name} ({ticker})."
         except Exception as e:
