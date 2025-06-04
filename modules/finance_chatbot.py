@@ -130,9 +130,8 @@ class FinanceChatbot:
         if not self.llm_client.api_key:
             # Use built-in fallback responses instead of just showing error message
             return self.llm_client.get_fallback_response(user_input)
-        
-        # Query the LLM
-        return self.llm_client.get_response(user_input)
+          # Query the LLM
+        return self.llm_client.generate_response(user_input)
     
     def handle_stock_buying_advice(self, user_input):
         """Handle stock buying advice request"""
