@@ -128,8 +128,7 @@ class StockAnalyzer:
         lower_band = data['MA50'] - (std20 * 2)
         current_upper = upper_band.iloc[-1]
         current_lower = lower_band.iloc[-1]
-        
-        # Determine trend and signals
+          # Determine trend and signals
         price_vs_ma50 = "Price is above 50-day MA" if current_price > ma50 else "Price is below 50-day MA"
         price_vs_ma200 = "Price is above 200-day MA" if current_price > ma200 else "Price is below 200-day MA"
         ma_trend = "Bullish" if ma50 > ma200 else "Bearish"
@@ -156,7 +155,7 @@ class StockAnalyzer:
             "price_vs_ma50": price_vs_ma50,
             "price_vs_ma200": price_vs_ma200,
             "ma_trend": ma_trend,
-            "macd_signal": macd_signal,
+            "macd_trend": macd_signal,
             "rsi_signal": rsi_signal,
             "bollinger_signal": bollinger_signal
         }

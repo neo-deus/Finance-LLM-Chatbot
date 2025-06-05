@@ -40,8 +40,13 @@ class Visualizer:
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        # Save the plot
-        plot_path = f"{ticker}_stock_plot.png"
+        # Save the plot directly to static directory
+        import os
+        static_dir = "static"
+        if not os.path.exists(static_dir):
+            os.makedirs(static_dir)
+        
+        plot_path = os.path.join(static_dir, f"{ticker}_stock_plot.png")
         plt.savefig(plot_path)
         plt.close()
         
@@ -81,8 +86,13 @@ class Visualizer:
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        # Save plot
-        plot_path = f"{ticker1}_vs_{ticker2}_comparison.png"
+        # Save plot directly to static directory
+        import os
+        static_dir = "static"
+        if not os.path.exists(static_dir):
+            os.makedirs(static_dir)
+        
+        plot_path = os.path.join(static_dir, f"{ticker1}_vs_{ticker2}_comparison.png")
         plt.savefig(plot_path)
         plt.close()
         
